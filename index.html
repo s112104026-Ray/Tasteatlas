@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TasteAtlas - Global Culinary Voyage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        terracotta: { DEFAULT: '#E05A47', dark: '#C44332' },
+                        saffron: { DEFAULT: '#F4A261', dark: '#E76F51' },
+                        emeraldCustom: { DEFAULT: '#2A9D8F', dark: '#1F7A6F' },
+                        cream: '#FDFBF7',
+                        warmDark: '#121110',
+                        warmCardDark: '#1A1817',
+                        warmBorderDark: '#2C2825'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Flavor Radar -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .font-serif-heading { font-family: 'Playfair Display', serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+        .glass-panel { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="bg-cream text-stone-800 dark:bg-warmDark dark:text-stone-100 min-h-screen flex flex-col selection:bg-terracotta selection:text-white">
+
+    <!-- Header / Navigation -->
+    <header class="sticky top-0 z-40 bg-cream/90 dark:bg-warmDark/90 glass-panel border-b border-stone-200 dark:border-warmBorderDark transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('explore')">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-terracotta to-saffron flex items-center justify-center text-white shadow-lg shadow-terracotta/20">
+                    <i class="fa-solid font-bold fa-utensils text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-serif-heading text-2xl font-extrabold tracking-tight bg-gradient-to-r from-terracotta via-saffron to-emeraldCustom bg-clip-text text-transparent">TasteAtlas</span>
+                    <span class="block text-[10px] tracking-widest uppercase font-semibold text-stone-500 dark:text-stone-400">Global Gastronomy</span>
+                </div>
+            </div>
+
+            <!-- Nav Items -->
+            <nav class="hidden md:flex items-center space-x-1 lg:space-x-2 font-medium text-sm">
+                <button id="nav-explore" onclick="switchView('explore')" class="nav-btn px-4 py-2 rounded-full transition-all text-terracotta font-semibold bg-terracotta/10">
+                    <i class="fa-solid fa-compass mr-2"></i>Explore
+                </button>
+                <button id="nav-map" onclick="switchView('map')" class="nav-btn px-4 py-2 rounded-full text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-warmCardDark transition-all">
+                    <i class="fa-solid fa-earth-americas mr-2"></i>Interactive Map
+                </button>
+                <button id="nav-quiz" onclick="switchView('quiz')" class="nav-btn px-4 py-2 rounded-full text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-warmCardDark transition-all">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Taste Matcher
+                </button>
+                <button id="nav-passport" onclick="switchView('passport')" class="nav-btn px-4 py-2 rounded-full text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-warmCardDark transition-all relative">
+                    <i class="fa-solid fa-passport mr-2"></i>Virtual Passport
+                    <span id="passport-badge-count" class="hidden absolute -top-1 -right-1 bg-terracotta text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-cream dark:border-warmDark">0</span>
+                </button>
+            </nav>
+
+            <!-- Actions (Theme Toggle & Mobile Menu) -->
+            <div class="flex items-center space-x-3">
+                <button id="theme-toggle" onclick="toggleDarkMode()" class="w-10 h-10 rounded-full border border-stone-300 dark:border-warmBorderDark flex items-center justify-center text-stone-600 dark:text-stone-300 hover:border-terracotta transition-colors">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <button onclick="toggleMobileMenu()" class="md:hidden w-10 h-10 rounded-xl bg-stone-100 dark:bg-warmCardDark flex items-center justify-center text-stone-700 dark:text-stone-200">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden border-b border-stone-200 dark:border-warmBorderDark bg-cream dark:bg-warmDark px-4 pt-2 pb-4 space-y-2">
+            <button onclick="switchView('explore'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-stone-700 dark:text-stone-200 font-medium hover:bg-stone-100 dark:hover:bg-warmCardDark">
+                <i class="fa-solid fa-compass w-6 text-terracotta"></i> Explore Cuisines
+            </button>
+            <button onclick="switchView('map'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-stone-700 dark:text-stone-200 font-medium hover:bg-stone-100 dark:hover:bg-warmCardDark">
+                <i class="fa-solid fa-earth-americas w-6 text-saffron"></i> Interactive World Map
+            </button>
+            <button onclick="switchView('quiz'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-stone-700 dark:text-stone-200 font-medium hover:bg-stone-100 dark:hover:bg-warmCardDark">
+                <i class="fa-solid fa-wand-magic-sparkles w-6 text-emeraldCustom"></i> Taste Matcher Quiz
+            </button>
+            <button onclick="switchView('passport'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-stone-700 dark:text-stone-200 font-medium hover:bg-stone-100 dark:hover:bg-warmCardDark">
+                <i class="fa-solid fa-passport w-6 text-terracotta"></i> Virtual Culinary Passport
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- SECTION 1: EXPLORE VIEW -->
+        <section id="view-explore" class="space-y-10 transition-opacity duration-300">
+            <!-- Hero Banner -->
+            <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-stone-900 to-warmDark text-white p-8 sm:p-12 border border-stone-800 shadow-2xl">
+                <div class="absolute inset-0 opacity-30 bg-cover bg-center pointer-events-none" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1200');"></div>
+                <div class="relative z-10 max-w-2xl space-y-4">
+                    <span class="inline-block px-3.5 py-1 rounded-full bg-terracotta/30 border border-terracotta/40 text-saffron text-xs uppercase tracking-widest font-semibold">Embark on a Taste Odyssey</span>
+                    <h1 class="font-serif-heading text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">Discover Iconic Flavors Across the Globe</h1>
+                    <p class="text-stone-300 text-sm sm:text-base leading-relaxed">From sizzling Asian street food to rich European classics and vibrant Latin traditions—explore stories, recipes, and flavor profiles of world-famous dishes.</p>
+                </div>
+            </div>
+
+            <!-- Controls Section (Search & Filters) -->
+            <div class="space-y-6">
+                <div class="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
+                    <!-- Search Bar with Autocomplete -->
+                    <div class="relative flex-1 max-w-xl">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-stone-400"></i>
+                            <input type="text" id="search-input" placeholder="Search dish, ingredient, country, or category..." oninput="handleSearchInput()" onfocus="handleSearchInput()" class="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark focus:outline-none focus:ring-2 focus:ring-terracotta text-sm transition-all shadow-sm">
+                            <button id="clear-search" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-1">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <!-- Autocomplete Dropdown -->
+                        <div id="autocomplete-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark rounded-2xl shadow-xl z-30 max-h-60 overflow-y-auto custom-scrollbar divide-y divide-stone-100 dark:divide-warmBorderDark"></div>
+                    </div>
+
+                    <!-- Dietary & Category Quick Selectors -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="filter-dietary" onchange="applyFilters()" class="px-4 py-3 rounded-2xl bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta cursor-pointer">
+                            <option value="all">All Dietary Types</option>
+                            <option value="Vegetarian">Vegetarian</option>
+                            <option value="Vegan">Vegan</option>
+                            <option value="Gluten-Free">Gluten-Free</option>
+                            <option value="Halal">Halal</option>
+                        </select>
+
+                        <select id="filter-category" onchange="applyFilters()" class="px-4 py-3 rounded-2xl bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta cursor-pointer">
+                            <option value="all">All Categories</option>
+                            <option value="Street Food">Street Food</option>
+                            <option value="Comfort Food">Comfort Food</option>
+                            <option value="Fine Dining">Fine Dining</option>
+                            <option value="Desserts">Desserts</option>
+                        </select>
+
+                        <select id="filter-spice" onchange="applyFilters()" class="px-4 py-3 rounded-2xl bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-terracotta cursor-pointer">
+                            <option value="all">Any Spice Level</option>
+                            <option value="0">Mild / Non-Spicy</option>
+                            <option value="1">Medium Spice</option>
+                            <option value="2">Hot & Spicy</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Region Pill Filters -->
+                <div class="flex items-center space-x-2 overflow-x-auto pb-2 custom-scrollbar" id="region-pills">
+                    <button onclick="setRegionFilter('all')" data-region="all" class="region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-terracotta text-white shadow-md shadow-terracotta/20">
+                        🌍 All World
+                    </button>
+                    <button onclick="setRegionFilter('Asia')" data-region="Asia" class="region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-stone-600 dark:text-stone-300 hover:border-terracotta">
+                        🥢 Asia
+                    </button>
+                    <button onclick="setRegionFilter('Europe')" data-region="Europe" class="region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-stone-600 dark:text-stone-300 hover:border-terracotta">
+                        🍷 Europe
+                    </button>
+                    <button onclick="setRegionFilter('Americas')" data-region="Americas" class="region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-stone-600 dark:text-stone-300 hover:border-terracotta">
+                        🌮 Americas
+                    </button>
+                    <button onclick="setRegionFilter('Middle East & Africa')" data-region="Middle East & Africa" class="region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-stone-600 dark:text-stone-300 hover:border-terracotta">
+                        🕌 Middle East & Africa
+                    </button>
+                    <button onclick="setRegionFilter('Oceania')" data-region="Oceania" class="region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-stone-600 dark:text-stone-300 hover:border-terracotta">
+                        🦘 Oceania
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dishes Grid -->
+            <div id="dishes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Dynamic Content Injected Here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-16 space-y-4">
+                <div class="w-20 h-20 mx-auto rounded-full bg-stone-100 dark:bg-warmCardDark flex items-center justify-center text-stone-400 text-3xl">
+                    <i class="fa-solid fa-plate-wheat"></i>
+                </div>
+                <h3 class="text-xl font-bold font-serif-heading">No Culinary Matches Found</h3>
+                <p class="text-stone-500 text-sm max-w-md mx-auto">Try loosening your dietary filters, clearing your search query, or choosing a different region.</p>
+                <button onclick="resetAllFilters()" class="px-6 py-2.5 rounded-full bg-terracotta text-white font-medium text-sm hover:bg-terracotta-dark transition-colors">Reset Filters</button>
+            </div>
+        </section>
+
+        <!-- SECTION 2: MAP VIEW -->
+        <section id="view-map" class="hidden space-y-8 transition-opacity duration-300">
+            <div class="text-center max-w-2xl mx-auto space-y-2">
+                <h2 class="font-serif-heading text-3xl sm:text-4xl font-bold">Interactive Culinary World Map</h2>
+                <p class="text-stone-500 text-sm sm:text-base">Click on any region or country pin on the map to instantly explore its signature culinary highlights and national delicacies.</p>
+            </div>
+
+            <!-- Map Wrapper -->
+            <div class="bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark rounded-3xl p-4 sm:p-8 shadow-xl relative overflow-hidden">
+                <!-- Map Header Overlay Controls -->
+                <div class="flex flex-wrap gap-2 justify-center mb-6">
+                    <button onclick="selectMapRegion('Asia')" class="map-reg-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-stone-100 dark:bg-warmDark hover:bg-terracotta hover:text-white transition-all">Asia</button>
+                    <button onclick="selectMapRegion('Europe')" class="map-reg-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-stone-100 dark:bg-warmDark hover:bg-terracotta hover:text-white transition-all">Europe</button>
+                    <button onclick="selectMapRegion('Americas')" class="map-reg-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-stone-100 dark:bg-warmDark hover:bg-terracotta hover:text-white transition-all">Americas</button>
+                    <button onclick="selectMapRegion('Middle East & Africa')" class="map-reg-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-stone-100 dark:bg-warmDark hover:bg-terracotta hover:text-white transition-all">Middle East & Africa</button>
+                    <button onclick="selectMapRegion('Oceania')" class="map-reg-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-stone-100 dark:bg-warmDark hover:bg-terracotta hover:text-white transition-all">Oceania</button>
+                </div>
+
+                <!-- Stylized Interactive SVG Map -->
+                <div class="relative w-full aspect-[2/1] bg-stone-900 rounded-2xl overflow-hidden border border-stone-800 flex items-center justify-center p-4">
+                    <!-- Custom Stylized World Map SVG -->
+                    <svg viewBox="0 0 1000 500" class="w-full h-full object-contain filter drop-shadow-lg">
+                        <!-- Map Continents Rough Shapes -->
+                        <g class="fill-stone-800 stroke-stone-700 stroke-[1.5]">
+                            <!-- North America -->
+                            <path d="M 100 100 L 250 80 L 320 180 L 220 280 L 150 250 L 80 180 Z" class="hover:fill-stone-700 transition-colors cursor-pointer" onclick="selectMapRegion('Americas')"/>
+                            <!-- South America -->
+                            <path d="M 230 290 L 320 290 L 360 380 L 280 470 L 230 400 Z" class="hover:fill-stone-700 transition-colors cursor-pointer" onclick="selectMapRegion('Americas')"/>
+                            <!-- Europe -->
+                            <path d="M 450 80 L 580 80 L 590 180 L 480 200 L 420 150 Z" class="hover:fill-stone-700 transition-colors cursor-pointer" onclick="selectMapRegion('Europe')"/>
+                            <!-- Africa -->
+                            <path d="M 450 210 L 580 200 L 610 320 L 540 430 L 460 330 Z" class="hover:fill-stone-700 transition-colors cursor-pointer" onclick="selectMapRegion('Middle East & Africa')"/>
+                            <!-- Asia -->
+                            <path d="M 590 70 L 880 70 L 920 220 L 750 300 L 600 200 Z" class="hover:fill-stone-700 transition-colors cursor-pointer" onclick="selectMapRegion('Asia')"/>
+                            <!-- Oceania -->
+                            <path d="M 780 340 L 900 330 L 920 420 L 820 440 Z" class="hover:fill-stone-700 transition-colors cursor-pointer" onclick="selectMapRegion('Oceania')"/>
+                        </g>
+
+                        <!-- Interactive Dish Pins -->
+                        <g id="map-pins"></g>
+                    </svg>
+
+                    <!-- Active Region Banner on Map Overlay -->
+                    <div id="map-region-label" class="absolute bottom-4 left-4 bg-warmDark/90 backdrop-blur border border-stone-700 px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold flex items-center space-x-2">
+                        <span id="map-active-text">Click a pin or continent to filter</span>
+                    </div>
+                </div>
+
+                <!-- Region Highlighted Dish List -->
+                <div class="mt-8">
+                    <h3 id="map-selected-title" class="font-serif-heading text-xl font-bold mb-4">All Interactive Locations</h3>
+                    <div id="map-dishes-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Dynamic Pins Cards -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: QUIZ VIEW -->
+        <section id="view-quiz" class="hidden max-w-3xl mx-auto space-y-8 transition-opacity duration-300">
+            <div class="text-center space-y-3">
+                <span class="px-3.5 py-1 rounded-full bg-saffron/20 text-saffron text-xs font-bold uppercase tracking-wider">Culinary Matchmaker</span>
+                <h2 class="font-serif-heading text-3xl sm:text-4xl font-bold">"What Should I Eat Today?"</h2>
+                <p class="text-stone-500 text-sm">Answer 3 simple questions to discover the global dish tailored to your exact taste cravings right now.</p>
+            </div>
+
+            <div class="bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark rounded-3xl p-6 sm:p-10 shadow-xl relative">
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-stone-100 dark:bg-warmDark h-2 rounded-full mb-8 overflow-hidden">
+                    <div id="quiz-progress" class="bg-gradient-to-r from-terracotta to-saffron h-full w-1/3 transition-all duration-300"></div>
+                </div>
+
+                <!-- Quiz Questions Container -->
+                <div id="quiz-step-1" class="quiz-step space-y-6">
+                    <h3 class="text-xl font-bold text-center">Step 1: Which flavor profile are you craving most?</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onclick="selectQuizOption('taste', 'spicy')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🌶️</span>
+                            <div>
+                                <p class="font-bold">Bold & Spicy</p>
+                                <p class="text-xs text-stone-500">Fiery chilis, rich spices, intense heat</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('taste', 'savory')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🍲</span>
+                            <div>
+                                <p class="font-bold">Rich & Umami / Savory</p>
+                                <p class="text-xs text-stone-500">Deep broths, cheeses, hearty comforting meats</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('taste', 'fresh')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🍋</span>
+                            <div>
+                                <p class="font-bold">Fresh, Tangy & Zesty</p>
+                                <p class="text-xs text-stone-500">Citrus, herbs, crisp textures</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('taste', 'sweet')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🍯</span>
+                            <div>
+                                <p class="font-bold">Sweet & Indulgent</p>
+                                <p class="text-xs text-stone-500">Pastries, rich creams, sweet glazes</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="quiz-step-2" class="quiz-step hidden space-y-6">
+                    <h3 class="text-xl font-bold text-center">Step 2: What's your current vibe / dining preference?</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onclick="selectQuizOption('category', 'Street Food')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🍢</span>
+                            <div>
+                                <p class="font-bold">Vibrant Street Food</p>
+                                <p class="text-xs text-stone-500">Quick, casual, flavor-packed bites</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('category', 'Comfort Food')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🍜</span>
+                            <div>
+                                <p class="font-bold">Cozy Comfort Dish</p>
+                                <p class="text-xs text-stone-500">Warm, soul-soothing, traditional fare</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('category', 'Fine Dining')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🍷</span>
+                            <div>
+                                <p class="font-bold">Elegant & Refined</p>
+                                <p class="text-xs text-stone-500">Sophisticated techniques & balance</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('category', 'Desserts')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🥐</span>
+                            <div>
+                                <p class="font-bold">Sweet Treat / Dessert</p>
+                                <p class="text-xs text-stone-500">Decadent end to a meal</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="quiz-step-3" class="quiz-step hidden space-y-6">
+                    <h3 class="text-xl font-bold text-center">Step 3: Any specific dietary requirements?</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onclick="selectQuizOption('dietary', 'all')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🍽️</span>
+                            <div>
+                                <p class="font-bold">No Restriction</p>
+                                <p class="text-xs text-stone-500">Open to anything delicious</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('dietary', 'Vegetarian')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🥗</span>
+                            <div>
+                                <p class="font-bold">Vegetarian</p>
+                                <p class="text-xs text-stone-500">Plant-forward and dairy friendly</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('dietary', 'Vegan')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🌱</span>
+                            <div>
+                                <p class="font-bold">Strictly Vegan</p>
+                                <p class="text-xs text-stone-500">100% plant-based ingredients</p>
+                            </div>
+                        </button>
+                        <button onclick="selectQuizOption('dietary', 'Gluten-Free')" class="quiz-opt-btn p-5 rounded-2xl border border-stone-200 dark:border-warmBorderDark hover:border-terracotta hover:bg-terracotta/5 text-left transition-all flex items-center space-x-4">
+                            <span class="text-3xl">🌾</span>
+                            <div>
+                                <p class="font-bold">Gluten-Free</p>
+                                <p class="text-xs text-stone-500">No wheat, rye, or gluten</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz Results Section -->
+                <div id="quiz-results" class="hidden text-center space-y-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emeraldCustom/20 text-emeraldCustom text-3xl mb-2">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-emeraldCustom font-bold">Your Ideal Culinary Match</span>
+                        <h3 id="match-dish-title" class="font-serif-heading text-3xl font-bold mt-1">--</h3>
+                        <p id="match-score-badge" class="mt-2 inline-block px-4 py-1 rounded-full bg-terracotta/10 text-terracotta font-bold text-sm">98% Flavor Match</p>
+                    </div>
+
+                    <div id="match-card-container" class="max-w-md mx-auto text-left">
+                        <!-- Dynamic Result Card -->
+                    </div>
+
+                    <button onclick="resetQuiz()" class="px-6 py-2.5 rounded-full border border-stone-300 dark:border-warmBorderDark font-medium text-sm hover:bg-stone-100 dark:hover:bg-warmDark transition-colors">
+                        <i class="fa-solid fa-rotate-right mr-2"></i>Retake Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: PASSPORT VIEW -->
+        <section id="view-passport" class="hidden space-y-8 transition-opacity duration-300">
+            <!-- Header Summary -->
+            <div class="bg-gradient-to-r from-stone-900 via-warmDark to-stone-900 text-white p-8 rounded-3xl border border-stone-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-2 text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start space-x-2">
+                        <i class="fa-solid fa-passport text-terracotta text-2xl"></i>
+                        <h2 class="font-serif-heading text-3xl font-bold">Culinary Passport</h2>
+                    </div>
+                    <p class="text-stone-400 text-sm max-w-lg">Track your gastronomic adventures around the globe. Mark dishes you've tasted and bookmark those you dream of trying!</p>
+                </div>
+
+                <!-- Stats Dashboard -->
+                <div class="flex items-center space-x-6 bg-stone-800/60 p-4 rounded-2xl border border-stone-700/50">
+                    <div class="text-center">
+                        <span id="stat-tasted" class="block font-serif-heading text-3xl font-bold text-saffron">0</span>
+                        <span class="text-[10px] text-stone-400 uppercase tracking-widest font-semibold">Dishes Tasted</span>
+                    </div>
+                    <div class="w-px h-10 bg-stone-700"></div>
+                    <div class="text-center">
+                        <span id="stat-countries" class="block font-serif-heading text-3xl font-bold text-emeraldCustom">0</span>
+                        <span class="text-[10px] text-stone-400 uppercase tracking-widest font-semibold">Countries</span>
+                    </div>
+                    <div class="w-px h-10 bg-stone-700"></div>
+                    <div class="text-center">
+                        <span id="stat-want" class="block font-serif-heading text-3xl font-bold text-terracotta">0</span>
+                        <span class="text-[10px] text-stone-400 uppercase tracking-widest font-semibold">Wishlist</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Virtual Badges / Achievements -->
+            <div class="bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+                <h3 class="font-serif-heading text-xl font-bold flex items-center">
+                    <i class="fa-solid fa-award text-saffron mr-2"></i> Culinary Badges & Achievements
+                </h3>
+                <div id="badges-container" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <!-- Badges injected via JS -->
+                </div>
+            </div>
+
+            <!-- Tabs: Tasted vs Want to Try -->
+            <div class="space-y-6">
+                <div class="flex border-b border-stone-200 dark:border-warmBorderDark space-x-8">
+                    <button id="tab-btn-tasted" onclick="switchPassportTab('tasted')" class="pb-3 border-b-2 border-terracotta text-terracotta font-bold text-sm">
+                        <i class="fa-solid fa-circle-check mr-2"></i>Tasted List
+                    </button>
+                    <button id="tab-btn-want" onclick="switchPassportTab('want')" class="pb-3 border-b-2 border-transparent text-stone-500 font-bold text-sm hover:text-stone-800 dark:hover:text-stone-200">
+                        <i class="fa-solid fa-bookmark mr-2"></i>Want to Try Wishlist
+                    </button>
+                </div>
+
+                <div id="passport-dishes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- DISH DETAIL MODAL -->
+    <div id="dish-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/75 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl relative">
+            <!-- Close Button -->
+            <button onclick="closeDishModal()" class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur transition-all">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Modal Content -->
+            <div id="modal-body">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DISHES = [
+            {
+                id: 'ramen',
+                name: 'Tonkotsu Ramen',
+                nativeName: '豚骨ラーメン',
+                country: 'Japan',
+                flag: '🇯🇵',
+                region: 'Asia',
+                category: 'Comfort Food',
+                dietary: [],
+                spiceLevel: 0,
+                image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=800',
+                description: 'Rich, creamy pork bone broth served with springy wheat noodles, tender chashu pork belly, soft-boiled marinated egg, and fresh green onions.',
+                history: 'Originating in Fukuoka on the island of Kyushu, Tonkotsu ramen evolved from simple street cart stall offerings into a globally celebrated masterpiece of broth slow-simmered for over 12 hours to achieve its signature emulsified collagen richness.',
+                ingredients: ['Ramen Wheat Noodles', 'Pork Bones Broth', 'Chashu Pork Belly', 'Ajitsuke Tamago (Marinated Egg)', 'Green Onions', 'Nori Seaweed', 'Wood Ear Mushrooms'],
+                recipeOverview: [
+                    'Simmer pork bones vigorously for 10-12 hours until broth turns milky opaque.',
+                    'Prepare tare seasoning (soy sauce & mirin reduction) in bowl base.',
+                    'Boil fresh ramen noodles for exactly 90 seconds.',
+                    'Ladle piping hot pork broth over tare, fold in noodles, and top with seared chashu and half-boiled egg.'
+                ],
+                flavorProfile: { Sweet: 2, Savory: 10, Spicy: 1, Umami: 10, Sour: 1, Bitter: 1 },
+                coordinates: { x: 860, y: 160 }
+            },
+            {
+                id: 'tacos-al-pastor',
+                name: 'Tacos al Pastor',
+                nativeName: 'Tacos al Pastor',
+                country: 'Mexico',
+                flag: '🇲🇽',
+                region: 'Americas',
+                category: 'Street Food',
+                dietary: ['Gluten-Free'],
+                spiceLevel: 1,
+                image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&q=80&w=800',
+                description: 'Thinly sliced achiote-marinated pork roasted on a vertical spit, served on warm corn tortillas with pineapple, cilantro, and diced onion.',
+                history: 'Brought to Mexico by Lebanese immigrants in the 1930s who introduced shawarma technique. Mexican cooks adapted the dish using pork instead of lamb and adding local achiote and chili marinades.',
+                ingredients: ['Pork Shoulder', 'Achiote Paste', 'Guajillo Chilis', 'Roasted Pineapple', 'Fresh Corn Tortillas', 'Cilantro', 'Lime Juice'],
+                recipeOverview: [
+                    'Marinate pork slices in achiote, dried chili paste, vinegar, and spices for 12 hours.',
+                    'Stack meat on vertical spit topped with fresh pineapple and flame roast.',
+                    'Thinly shave crispy meat onto warm corn tortillas.',
+                    'Garnish with roasted pineapple pieces, chopped cilantro, onion, and fresh salsa.'
+                ],
+                flavorProfile: { Sweet: 5, Savory: 8, Spicy: 6, Umami: 7, Sour: 6, Bitter: 1 },
+                coordinates: { x: 220, y: 220 }
+            },
+            {
+                id: 'butter-chicken',
+                name: 'Butter Chicken (Murgh Makhani)',
+                nativeName: 'मुर्ग मखनी',
+                country: 'India',
+                flag: '🇮🇳',
+                region: 'Asia',
+                category: 'Comfort Food',
+                dietary: ['Halal', 'Gluten-Free'],
+                spiceLevel: 1,
+                image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&q=80&w=800',
+                description: 'Tender tandoori-marinated chicken simmered in a velvety, buttery tomato gravy scented with garam masala, fenugreek, and cream.',
+                history: 'Created in the 1950s by Kundan Lal Gujral at the Moti Mahal restaurant in Delhi, who sought to reuse leftover tandoori chicken by simmering it in a rich tomato and butter sauce.',
+                ingredients: ['Chicken Thighs', 'Yogurt Marinade', 'Butter', 'Tomato Puree', 'Heavy Cream', 'Kasuri Methi (Fenugreek leaves)', 'Garam Masala'],
+                recipeOverview: [
+                    'Marinate chicken in spiced yogurt and grill until charred in a tandoor or high-heat oven.',
+                    'Simmer tomatoes, garlic, ginger, and aromatic spices into a smooth paste.',
+                    'Whisk in generous butter, heavy cream, crushed fenugreek leaves, and tender chicken.'
+                ],
+                flavorProfile: { Sweet: 4, Savory: 9, Spicy: 4, Umami: 8, Sour: 4, Bitter: 1 },
+                coordinates: { x: 720, y: 210 }
+            },
+            {
+                id: 'pad-thai',
+                name: 'Pad Thai',
+                nativeName: 'ผัดไทย',
+                country: 'Thailand',
+                flag: '🇹🇭',
+                region: 'Asia',
+                category: 'Street Food',
+                dietary: ['Gluten-Free'],
+                spiceLevel: 1,
+                image: 'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&q=80&w=800',
+                description: 'Stir-fried rice noodles tossed in sweet-sour tamarind sauce with fresh shrimp, tofu, crushed peanuts, bean sprouts, and scrambled egg.',
+                history: 'Promoted in the 1930s by Prime Minister Plaek Phibunsongkhram as part of a campaign to promote Thai nationalism and reduce rice consumption during wartime shortages.',
+                ingredients: ['Flat Rice Noodles', 'Tamarind Paste', 'Palm Sugar', 'Fish Sauce', 'Fresh Shrimp', 'Press Tofu', 'Crushed Peanuts', 'Bean Sprouts'],
+                recipeOverview: [
+                    'Soak rice noodles until pliable.',
+                    'Whisk tamarind paste, palm sugar, and fish sauce to make signature Pad Thai sauce.',
+                    'Wok-fry shrimp and tofu, push aside, scrambled egg, then add noodles and sauce.',
+                    'Toss high heat until noodles absorb sauce; finish with bean sprouts and peanuts.'
+                ],
+                flavorProfile: { Sweet: 7, Savory: 7, Spicy: 3, Umami: 8, Sour: 8, Bitter: 1 },
+                coordinates: { x: 790, y: 240 }
+            },
+            {
+                id: 'croissant',
+                name: 'French Croissant',
+                nativeName: 'Croissant au Beurre',
+                country: 'France',
+                flag: '🇫🇷',
+                region: 'Europe',
+                category: 'Desserts',
+                dietary: ['Vegetarian'],
+                spiceLevel: 0,
+                image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=800',
+                description: 'A buttery, flaky, golden-brown crescent-shaped pastry made from laminated yeast dough layers.',
+                history: 'Inspired by the Austrian Kipferl, French bakers refined the pastry into the ultra-flaky butter-laminated icon known today during the mid-19th century in Paris.',
+                ingredients: ['French Pastry Flour', 'High-Fat European Butter', 'Yeast', 'Milk', 'Sugar', 'Sea Salt'],
+                recipeOverview: [
+                    'Prepare elastic yeast dough and chill thoroughly.',
+                    'Encase butter block inside dough and execute multiple fold cycles (lamination).',
+                    'Roll thin, cut triangles, roll into crescent shapes, and proof until puffy.',
+                    'Bake at high temp until deep golden brown and crisp.'
+                ],
+                flavorProfile: { Sweet: 4, Savory: 5, Spicy: 0, Umami: 4, Sour: 1, Bitter: 1 },
+                coordinates: { x: 490, y: 130 }
+            },
+            {
+                id: 'paella',
+                name: 'Valencian Paella',
+                nativeName: 'Paella Valenciana',
+                country: 'Spain',
+                flag: '🇪🇸',
+                region: 'Europe',
+                category: 'Comfort Food',
+                dietary: ['Gluten-Free'],
+                spiceLevel: 0,
+                image: 'https://images.unsplash.com/photo-1534080564583-6be75777b70a?auto=format&fit=crop&q=80&w=800',
+                description: 'Saffron-infused rice cooked over an open fire with chicken, rabbit, green beans, and a caramelized bottom crisp layer called socarrat.',
+                history: 'Originated in the mid-19th century around Lake Albufera in Valencia, created by farm workers who cooked rice over wood fires with whatever ingredients were available in the fields.',
+                ingredients: ['Bomba Rice', 'Saffron Threads', 'Chicken & Rabbit', 'Flat Green Beans', 'Garrofón Beans', 'Rosemary', 'Olive Oil'],
+                recipeOverview: [
+                    'Brown meats in olive oil in wide shallow paella pan.',
+                    'Add vegetables and grated tomato to form sofrito.',
+                    'Pour in saffron broth and scatter Bomba rice evenly.',
+                    'Simmer undisturbed to form golden bottom crust (socarrat).'
+                ],
+                flavorProfile: { Sweet: 1, Savory: 9, Spicy: 1, Umami: 8, Sour: 2, Bitter: 1 },
+                coordinates: { x: 470, y: 160 }
+            },
+            {
+                id: 'ceviche',
+                name: 'Peruvian Ceviche',
+                nativeName: 'Ceviche Peruano',
+                country: 'Peru',
+                flag: '🇵🇪',
+                region: 'Americas',
+                category: 'Fine Dining',
+                dietary: ['Gluten-Free'],
+                spiceLevel: 2,
+                image: 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?auto=format&fit=crop&q=80&w=800',
+                description: 'Ultra-fresh raw sea bass cured in vibrant lime juice (Leche de Tigre) with red onions, fiery Aji Limo peppers, sweet potato, and giant Andean corn.',
+                history: 'Declared a National Cultural Heritage in Peru, ceviche traces back to the Moche civilization 2,000 years ago who preserved fish with fermented banana passionfruit juice before Spanish brought lime citrus.',
+                ingredients: ['Fresh White Sea Bass', 'Key Lime Juice', 'Aji Limo Chili', 'Red Onion', 'Leche de Tigre Broth', 'Sweet Potato', 'Cusco Corn (Choclo)'],
+                recipeOverview: [
+                    'Cut sashimi-grade fresh sea bass into uniform cubes.',
+                    'Flash marinate in freshly squeezed key lime juice for 2-3 minutes.',
+                    'Toss with thinly sliced red onions and diced Aji Limo.',
+                    'Serve ice-cold alongside steamed sweet potato and boiled Choclo corn.'
+                ],
+                flavorProfile: { Sweet: 3, Savory: 6, Spicy: 7, Umami: 7, Sour: 10, Bitter: 1 },
+                coordinates: { x: 290, y: 360 }
+            },
+            {
+                id: 'falafel',
+                name: 'Falafel Pita Pocket',
+                nativeName: 'فلافل',
+                country: 'Middle East',
+                flag: '🇱🇧',
+                region: 'Middle East & Africa',
+                category: 'Street Food',
+                dietary: ['Vegetarian', 'Vegan', 'Halal'],
+                spiceLevel: 1,
+                image: 'https://images.unsplash.com/photo-1593001874117-c99c800e3eb7?auto=format&fit=crop&q=80&w=800',
+                description: 'Golden crispy deep-fried patties made from soaked chickpeas and herbs, tucked into pita with creamy tahini and tangy pickled turnip.',
+                history: 'Believed to have originated in Egypt where Coptic Christians cooked fava bean patties as a meat substitute during Lent, spreading across the Levant as an ultimate street food.',
+                ingredients: ['Soaked Chickpeas', 'Fresh Parsley & Cilantro', 'Cumin & Coriander', 'Garlic', 'Tahini Sauce', 'Pita Bread', 'Pickled Vegetables'],
+                recipeOverview: [
+                    'Grind soaked raw chickpeas with fresh herbs, garlic, and spices into coarse paste.',
+                    'Form into small rounded discs or balls.',
+                    'Deep-fry in neutral oil until crispy dark golden brown.',
+                    'Stuff warm pita bread with falafel, diced salad, and generous tahini drizzle.'
+                ],
+                flavorProfile: { Sweet: 1, Savory: 8, Spicy: 3, Umami: 6, Sour: 4, Bitter: 2 },
+                coordinates: { x: 570, y: 190 }
+            },
+            {
+                id: 'injera-doro-wat',
+                name: 'Ethiopian Doro Wat with Injera',
+                nativeName: 'ዶሮ ወጥ',
+                country: 'Ethiopia',
+                flag: '🇪🇹',
+                region: 'Middle East & Africa',
+                category: 'Comfort Food',
+                dietary: ['Halal', 'Gluten-Free'],
+                spiceLevel: 2,
+                image: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?auto=format&fit=crop&q=80&w=800',
+                description: 'Slow-cooked spicy chicken stew infused with fiery Berbere spice blend and niter kibbeh (spiced butter), served over spongy, sour Injera flatbread.',
+                history: 'Doro Wat is the national dish of Ethiopia, traditionally served at holiday feasts and celebrations. Injera bread made from Ancient Teff grain serves as both plate and eating utensil.',
+                ingredients: ['Chicken Drumsticks', 'Teff Flour Injera', 'Berbere Spice Blend', 'Niter Kibbeh (Clarified Spiced Butter)', 'Hard-Boiled Eggs', 'Slow-Caramelized Red Onions'],
+                recipeOverview: [
+                    'Slowly caramelize finely minced red onions without oil for 1 hour.',
+                    'Add Niter Kibbeh spiced butter and Berbere spice blend.',
+                    'Simmer chicken drumsticks and hard-boiled eggs until ultra tender.',
+                    'Serve over large spread-out Injera flatbread for communal eating.'
+                ],
+                flavorProfile: { Sweet: 3, Savory: 9, Spicy: 9, Umami: 8, Sour: 6, Bitter: 2 },
+                coordinates: { x: 580, y: 280 }
+            },
+            {
+                id: 'meat-pie',
+                name: 'Aussie Meat Pie',
+                nativeName: 'Aussie Meat Pie',
+                country: 'Australia',
+                flag: '🇦🇺',
+                region: 'Oceania',
+                category: 'Comfort Food',
+                dietary: [],
+                spiceLevel: 0,
+                image: 'https://images.unsplash.com/photo-1572383672419-ab35444a6934?auto=format&fit=crop&q=80&w=800',
+                description: 'Hand-sized pastry pie packed with rich minced beef gravy, encased in a sturdy shortcrust base and topped with flaky puff pastry.',
+                history: 'An iconic Australian culinary staple since early colonial days, deeply rooted in footy matches, pub culture, and bakeries across the nation.',
+                ingredients: ['Minced Beef', 'Beef Gravy', 'Worcestershire Sauce', 'Shortcrust Pastry (Base)', 'Puff Pastry (Top)', 'Tomato Sauce (Ketchup)'],
+                recipeOverview: [
+                    'Brown minced beef with onions, garlic, Worcestershire, and rich beef stock.',
+                    'Line pie tins with shortcrust pastry base.',
+                    'Fill with savory beef gravy mixture.',
+                    'Top with buttery puff pastry, crimp edges, and bake golden brown.'
+                ],
+                flavorProfile: { Sweet: 2, Savory: 9, Spicy: 0, Umami: 8, Sour: 1, Bitter: 1 },
+                coordinates: { x: 860, y: 390 }
+            }
+        ];
+
+        let activeRegion = 'all';
+        let activeCategory = 'all';
+        let activeDietary = 'all';
+        let activeSpice = 'all';
+        let searchQuery = '';
+        
+        // Quiz State
+        let quizAnswers = {};
+        
+        // Passport LocalStorage state
+        let userPassport = {
+            tasted: [],
+            wantToTry: []
+        };
+
+        // Load Passport from localStorage
+        function loadPassportState() {
+            const stored = localStorage.getItem('tasteatlas_passport');
+            if (stored) {
+                try {
+                    userPassport = JSON.parse(stored);
+                } catch(e) { console.error('Error loading passport:', e); }
+            }
+            updatePassportCounters();
+        }
+
+        function savePassportState() {
+            localStorage.setItem('tasteatlas_passport', JSON.stringify(userPassport));
+            updatePassportCounters();
+        }
+
+        function switchView(viewName) {
+            ['explore', 'map', 'quiz', 'passport'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const btn = document.getElementById(`nav-${v}`);
+                if (v === viewName) {
+                    el.classList.remove('hidden');
+                    if (btn) {
+                        btn.classList.add('bg-terracotta/10', 'text-terracotta', 'font-semibold');
+                        btn.classList.remove('text-stone-600', 'dark:text-stone-300');
+                    }
+                } else {
+                    el.classList.add('hidden');
+                    if (btn) {
+                        btn.classList.remove('bg-terracotta/10', 'text-terracotta', 'font-semibold');
+                        btn.classList.add('text-stone-600', 'dark:text-stone-300');
+                    }
+                }
+            });
+
+            if (viewName === 'map') renderMapPins();
+            if (viewName === 'passport') renderPassportView();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('theme-icon');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.className = 'fa-solid fa-sun text-saffron';
+            } else {
+                icon.className = 'fa-solid fa-moon text-stone-600';
+            }
+        }
+
+        function renderDishesGrid() {
+            const grid = document.getElementById('dishes-grid');
+            const empty = document.getElementById('empty-state');
+            grid.innerHTML = '';
+
+            const filtered = DISHES.filter(dish => {
+                const matchesRegion = activeRegion === 'all' || dish.region === activeRegion;
+                const matchesCategory = activeCategory === 'all' || dish.category === activeCategory;
+                const matchesDietary = activeDietary === 'all' || dish.dietary.includes(activeDietary);
+                const matchesSpice = activeSpice === 'all' || dish.spiceLevel.toString() === activeSpice;
+                
+                const q = searchQuery.toLowerCase().trim();
+                const matchesSearch = !q || 
+                    dish.name.toLowerCase().includes(q) || 
+                    dish.country.toLowerCase().includes(q) || 
+                    dish.ingredients.some(i => i.toLowerCase().includes(q)) ||
+                    dish.category.toLowerCase().includes(q);
+
+                return matchesRegion && matchesCategory && matchesDietary && matchesSpice && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            filtered.forEach(dish => {
+                const isTasted = userPassport.tasted.includes(dish.id);
+                const isWant = userPassport.wantToTry.includes(dish.id);
+
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 flex flex-col group";
+                
+                card.innerHTML = `
+                    <div class="relative h-48 overflow-hidden cursor-pointer" onclick="openDishModal('${dish.id}')">
+                        <img src="${dish.image}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/2C2825/FFF?text=${encodeURIComponent(dish.name)}'">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                        <span class="absolute top-3 left-3 bg-black/60 backdrop-blur text-white text-xs px-3 py-1 rounded-full font-medium flex items-center space-x-1">
+                            <span>${dish.flag}</span>
+                            <span>${dish.country}</span>
+                        </span>
+                        
+                        <!-- Quick Action Toggles -->
+                        <div class="absolute top-3 right-3 flex items-center space-x-1.5" onclick="event.stopPropagation()">
+                            <button onclick="togglePassportItem('${dish.id}', 'tasted')" class="w-8 h-8 rounded-full ${isTasted ? 'bg-emeraldCustom text-white' : 'bg-black/50 text-stone-300 hover:text-white'} backdrop-blur flex items-center justify-center transition-all" title="Mark as Tasted">
+                                <i class="fa-solid fa-check text-xs"></i>
+                            </button>
+                            <button onclick="togglePassportItem('${dish.id}', 'want')" class="w-8 h-8 rounded-full ${isWant ? 'bg-terracotta text-white' : 'bg-black/50 text-stone-300 hover:text-white'} backdrop-blur flex items-center justify-center transition-all" title="Add to Wishlist">
+                                <i class="fa-solid fa-bookmark text-xs"></i>
+                            </button>
+                        </div>
+
+                        <div class="absolute bottom-3 left-3 right-3 flex justify-between items-end">
+                            <span class="text-xs font-semibold text-saffron bg-saffron/20 px-2.5 py-0.5 rounded-md backdrop-blur">${dish.category}</span>
+                            <span class="text-xs text-stone-300">${getSpiceBadge(dish.spiceLevel)}</span>
+                        </div>
+                    </div>
+
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-serif-heading text-lg font-bold group-hover:text-terracotta transition-colors cursor-pointer" onclick="openDishModal('${dish.id}')">${dish.name}</h3>
+                            </div>
+                            <p class="text-stone-500 dark:text-stone-400 text-xs line-clamp-2 mt-1.5">${dish.description}</p>
+                        </div>
+
+                        <div class="pt-2 border-t border-stone-100 dark:border-warmBorderDark/60 flex items-center justify-between">
+                            <div class="flex flex-wrap gap-1">
+                                ${dish.dietary.map(d => `<span class="text-[10px] bg-stone-100 dark:bg-warmDark text-stone-600 dark:text-stone-300 px-2 py-0.5 rounded-full font-medium">${d}</span>`).join('')}
+                            </div>
+                            <button onclick="openDishModal('${dish.id}')" class="text-xs font-bold text-terracotta hover:underline flex items-center">
+                                View Recipe <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function getSpiceBadge(level) {
+            if (level === 0) return '🍃 Mild';
+            if (level === 1) return '🌶️ Medium';
+            return '🌶️🌶️ Hot';
+        }
+
+        function setRegionFilter(region) {
+            activeRegion = region;
+            document.querySelectorAll('#region-pills button').forEach(btn => {
+                if (btn.dataset.region === region) {
+                    btn.className = "region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-terracotta text-white shadow-md shadow-terracotta/20";
+                } else {
+                    btn.className = "region-pill px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark text-stone-600 dark:text-stone-300 hover:border-terracotta";
+                }
+            });
+            renderDishesGrid();
+        }
+
+        function applyFilters() {
+            activeDietary = document.getElementById('filter-dietary').value;
+            activeCategory = document.getElementById('filter-category').value;
+            activeSpice = document.getElementById('filter-spice').value;
+            renderDishesGrid();
+        }
+
+        function handleSearchInput() {
+            const input = document.getElementById('search-input');
+            const clearBtn = document.getElementById('clear-search');
+            const dropdown = document.getElementById('autocomplete-results');
+            searchQuery = input.value;
+
+            if (searchQuery.trim().length > 0) {
+                clearBtn.classList.remove('hidden');
+                
+                // Populate Autocomplete
+                const matches = DISHES.filter(d => 
+                    d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    d.country.toLowerCase().includes(searchQuery.toLowerCase())
+                ).slice(0, 5);
+
+                if (matches.length > 0) {
+                    dropdown.classList.remove('hidden');
+                    dropdown.innerHTML = matches.map(m => `
+                        <div onclick="selectAutocomplete('${m.id}')" class="p-3 hover:bg-stone-50 dark:hover:bg-warmDark cursor-pointer flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xl">${m.flag}</span>
+                                <div>
+                                    <p class="text-sm font-bold">${m.name}</p>
+                                    <p class="text-xs text-stone-400">${m.country} • ${m.category}</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-xs text-stone-400"></i>
+                        </div>
+                    `).join('');
+                } else {
+                    dropdown.classList.add('hidden');
+                }
+            } else {
+                clearBtn.classList.add('hidden');
+                dropdown.classList.add('hidden');
+            }
+
+            renderDishesGrid();
+        }
+
+        function selectAutocomplete(id) {
+            document.getElementById('autocomplete-results').classList.add('hidden');
+            openDishModal(id);
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('autocomplete-results').classList.add('hidden');
+            handleSearchInput();
+        }
+
+        function resetAllFilters() {
+            searchQuery = '';
+            document.getElementById('search-input').value = '';
+            document.getElementById('filter-dietary').value = 'all';
+            document.getElementById('filter-category').value = 'all';
+            document.getElementById('filter-spice').value = 'all';
+            activeCategory = 'all';
+            activeDietary = 'all';
+            activeSpice = 'all';
+            setRegionFilter('all');
+        }
+
+        function renderMapPins(filterRegion = null) {
+            const mapPinsG = document.getElementById('map-pins');
+            const grid = document.getElementById('map-dishes-grid');
+            mapPinsG.innerHTML = '';
+            grid.innerHTML = '';
+
+            const list = filterRegion ? DISHES.filter(d => d.region === filterRegion) : DISHES;
+
+            list.forEach(dish => {
+                // Render Pins on SVG
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.setAttribute("class", "cursor-pointer group");
+                g.onclick = () => openDishModal(dish.id);
+
+                g.innerHTML = `
+                    <circle cx="${dish.coordinates.x}" cy="${dish.coordinates.y}" r="12" class="fill-terracotta/30 animate-ping" />
+                    <circle cx="${dish.coordinates.x}" cy="${dish.coordinates.y}" r="8" class="fill-terracotta stroke-white stroke-2 group-hover:fill-saffron transition-colors" />
+                    <text x="${dish.coordinates.x}" y="${dish.coordinates.y - 14}" text-anchor="middle" class="fill-white font-sans text-[10px] font-bold pointer-events-none drop-shadow">${dish.flag} ${dish.name}</text>
+                `;
+                mapPinsG.appendChild(g);
+
+                // Render Map Dish Cards
+                const card = document.createElement('div');
+                card.className = "bg-stone-50 dark:bg-warmDark border border-stone-200 dark:border-warmBorderDark p-4 rounded-2xl flex items-center space-x-4 cursor-pointer hover:border-terracotta transition-all";
+                card.onclick = () => openDishModal(dish.id);
+                card.innerHTML = `
+                    <img src="${dish.image}" class="w-16 h-16 rounded-xl object-cover" onerror="this.src='https://placehold.co/100x100'">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-1">
+                            <span>${dish.flag}</span>
+                            <h4 class="font-bold text-sm truncate">${dish.name}</h4>
+                        </div>
+                        <p class="text-xs text-stone-500 dark:text-stone-400 truncate">${dish.country} • ${dish.category}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectMapRegion(region) {
+            document.getElementById('map-active-text').innerText = `Filtered by Region: ${region}`;
+            document.getElementById('map-selected-title').innerText = `${region} Culinary Highlights`;
+            renderMapPins(region);
+        }
+
+        function selectQuizOption(stepKey, value) {
+            quizAnswers[stepKey] = value;
+
+            if (stepKey === 'taste') {
+                document.getElementById('quiz-step-1').classList.add('hidden');
+                document.getElementById('quiz-step-2').classList.remove('hidden');
+                document.getElementById('quiz-progress').style.width = '66%';
+            } else if (stepKey === 'category') {
+                document.getElementById('quiz-step-2').classList.add('hidden');
+                document.getElementById('quiz-step-3').classList.remove('hidden');
+                document.getElementById('quiz-progress').style.width = '100%';
+            } else if (stepKey === 'dietary') {
+                document.getElementById('quiz-step-3').classList.add('hidden');
+                calculateQuizResult();
+            }
+        }
+
+        function calculateQuizResult() {
+            const resultsSection = document.getElementById('quiz-results');
+            resultsSection.classList.remove('hidden');
+
+            // Find best matching dish
+            let bestMatch = DISHES[0];
+            let highestScore = -1;
+
+            DISHES.forEach(dish => {
+                let score = 0;
+                
+                // Taste score check
+                if (quizAnswers.taste === 'spicy' && dish.spiceLevel > 0) score += 3;
+                if (quizAnswers.taste === 'savory' && dish.flavorProfile.Savory >= 7) score += 3;
+                if (quizAnswers.taste === 'fresh' && dish.flavorProfile.Sour >= 5) score += 3;
+                if (quizAnswers.taste === 'sweet' && dish.flavorProfile.Sweet >= 4) score += 3;
+
+                // Category score check
+                if (dish.category === quizAnswers.category) score += 4;
+
+                // Dietary requirement check
+                if (quizAnswers.dietary !== 'all') {
+                    if (dish.dietary.includes(quizAnswers.dietary)) score += 5;
+                    else score -= 10; // penalty for non-matching dietary
+                }
+
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = dish;
+                }
+            });
+
+            document.getElementById('match-dish-title').innerText = `${bestMatch.flag} ${bestMatch.name}`;
+            
+            const matchCard = document.getElementById('match-card-container');
+            matchCard.innerHTML = `
+                <div class="bg-stone-50 dark:bg-warmDark p-5 rounded-3xl border border-stone-200 dark:border-warmBorderDark space-y-4">
+                    <img src="${bestMatch.image}" class="w-full h-48 object-cover rounded-2xl">
+                    <div>
+                        <p class="text-xs text-saffron font-bold uppercase">${bestMatch.country} • ${bestMatch.category}</p>
+                        <p class="text-stone-600 dark:text-stone-300 text-xs mt-2">${bestMatch.description}</p>
+                    </div>
+                    <button onclick="openDishModal('${bestMatch.id}')" class="w-full py-3 rounded-2xl bg-terracotta text-white font-bold text-sm hover:bg-terracotta-dark transition-colors">
+                        Explore Full Dish & Recipe
+                    </button>
+                </div>
+            `;
+        }
+
+        function resetQuiz() {
+            quizAnswers = {};
+            document.getElementById('quiz-results').classList.add('hidden');
+            document.getElementById('quiz-step-1').classList.remove('hidden');
+            document.getElementById('quiz-progress').style.width = '33%';
+        }
+
+        function togglePassportItem(dishId, listType) {
+            if (listType === 'tasted') {
+                const idx = userPassport.tasted.indexOf(dishId);
+                if (idx > -1) userPassport.tasted.splice(idx, 1);
+                else userPassport.tasted.push(dishId);
+            } else if (listType === 'want') {
+                const idx = userPassport.wantToTry.indexOf(dishId);
+                if (idx > -1) userPassport.wantToTry.splice(idx, 1);
+                else userPassport.wantToTry.push(dishId);
+            }
+
+            savePassportState();
+            renderDishesGrid();
+            if (!document.getElementById('view-passport').classList.contains('hidden')) {
+                renderPassportView();
+            }
+        }
+
+        function updatePassportCounters() {
+            const countBadge = document.getElementById('passport-badge-count');
+            const total = userPassport.tasted.length + userPassport.wantToTry.length;
+            
+            if (total > 0) {
+                countBadge.innerText = total;
+                countBadge.classList.remove('hidden');
+            } else {
+                countBadge.classList.add('hidden');
+            }
+
+            // Stats update
+            document.getElementById('stat-tasted').innerText = userPassport.tasted.length;
+            document.getElementById('stat-want').innerText = userPassport.wantToTry.length;
+
+            // Calculate unique countries tasted
+            const uniqueCountries = new Set(
+                DISHES.filter(d => userPassport.tasted.includes(d.id)).map(d => d.country)
+            );
+            document.getElementById('stat-countries').innerText = uniqueCountries.size;
+        }
+
+        function renderPassportView() {
+            updatePassportCounters();
+            renderBadges();
+            switchPassportTab('tasted');
+        }
+
+        function renderBadges() {
+            const container = document.getElementById('badges-container');
+            const tastedCount = userPassport.tasted.length;
+            
+            const badges = [
+                { title: 'Novice Explorer', desc: 'Taste 1 Global Dish', icon: '🐣', unlocked: tastedCount >= 1 },
+                { title: 'Spice Pioneer', desc: 'Taste 3 Global Dishes', icon: '🌶️', unlocked: tastedCount >= 3 },
+                { title: 'Globe Trotter', desc: 'Taste 5 Global Dishes', icon: '✈️', unlocked: tastedCount >= 5 },
+                { title: 'Master Gourmet', desc: 'Taste 8 Global Dishes', icon: '👑', unlocked: tastedCount >= 8 },
+            ];
+
+            container.innerHTML = badges.map(b => `
+                <div class="p-4 rounded-2xl border ${b.unlocked ? 'bg-terracotta/10 border-terracotta text-stone-900 dark:text-stone-100' : 'bg-stone-100 dark:bg-warmDark border-stone-200 dark:border-warmBorderDark opacity-50'} flex flex-col items-center text-center space-y-2">
+                    <span class="text-3xl">${b.icon}</span>
+                    <h4 class="font-bold text-xs sm:text-sm">${b.title}</h4>
+                    <p class="text-[10px] text-stone-500">${b.desc}</p>
+                    <span class="text-[10px] font-bold ${b.unlocked ? 'text-emeraldCustom' : 'text-stone-400'}">
+                        ${b.unlocked ? 'Unlocked ✓' : 'Locked'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function switchPassportTab(tab) {
+            const grid = document.getElementById('passport-dishes-grid');
+            const btnTasted = document.getElementById('tab-btn-tasted');
+            const btnWant = document.getElementById('tab-btn-want');
+
+            if (tab === 'tasted') {
+                btnTasted.className = "pb-3 border-b-2 border-terracotta text-terracotta font-bold text-sm";
+                btnWant.className = "pb-3 border-b-2 border-transparent text-stone-500 font-bold text-sm hover:text-stone-800 dark:hover:text-stone-200";
+                
+                const items = DISHES.filter(d => userPassport.tasted.includes(d.id));
+                renderPassportGridItems(items, 'No dishes marked as tasted yet! Explore and check off your culinary journeys.');
+            } else {
+                btnWant.className = "pb-3 border-b-2 border-terracotta text-terracotta font-bold text-sm";
+                btnTasted.className = "pb-3 border-b-2 border-transparent text-stone-500 font-bold text-sm hover:text-stone-800 dark:hover:text-stone-200";
+                
+                const items = DISHES.filter(d => userPassport.wantToTry.includes(d.id));
+                renderPassportGridItems(items, 'Your wishlist is currently empty. Bookmark dishes you wish to try!');
+            }
+        }
+
+        function renderPassportGridItems(items, emptyMsg) {
+            const grid = document.getElementById('passport-dishes-grid');
+            grid.innerHTML = '';
+
+            if (items.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-sm">${emptyMsg}</div>`;
+                return;
+            }
+
+            items.forEach(dish => {
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-warmCardDark border border-stone-200 dark:border-warmBorderDark rounded-2xl overflow-hidden p-4 flex items-center space-x-4";
+                card.innerHTML = `
+                    <img src="${dish.image}" class="w-20 h-20 rounded-xl object-cover" onerror="this.src='https://placehold.co/100x100'">
+                    <div class="flex-1 min-w-0">
+                        <span class="text-xs text-saffron font-bold">${dish.flag} ${dish.country}</span>
+                        <h4 class="font-bold text-sm truncate">${dish.name}</h4>
+                        <button onclick="openDishModal('${dish.id}')" class="mt-2 text-xs text-terracotta font-semibold hover:underline">View Details</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        let currentChart = null;
+
+        function openDishModal(dishId) {
+            const dish = DISHES.find(d => d.id === dishId);
+            if (!dish) return;
+
+            const modal = document.getElementById('dish-modal');
+            const body = document.getElementById('modal-body');
+
+            const isTasted = userPassport.tasted.includes(dish.id);
+            const isWant = userPassport.wantToTry.includes(dish.id);
+
+            body.innerHTML = `
+                <div class="relative h-64 sm:h-80">
+                    <img src="${dish.image}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/800x400'">
+                    <div class="absolute inset-0 bg-gradient-to-t from-warmCardDark via-warmCardDark/40 to-transparent"></div>
+                    <div class="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                        <div>
+                            <div class="flex items-center space-x-2 text-sm font-semibold text-saffron mb-1">
+                                <span>${dish.flag}</span>
+                                <span>${dish.country}</span>
+                                <span>•</span>
+                                <span>${dish.region}</span>
+                            </div>
+                            <h2 class="font-serif-heading text-3xl sm:text-4xl font-bold text-white">${dish.name}</h2>
+                            <p class="text-stone-300 text-sm italic">${dish.nativeName}</p>
+                        </div>
+
+                        <!-- Audio Pronunciation Button -->
+                        <button onclick="speakText('${dish.name}')" class="px-4 py-2.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur text-white text-xs font-bold flex items-center space-x-2 border border-white/30 transition-all">
+                            <i class="fa-solid fa-volume-high text-saffron"></i>
+                            <span>Listen Pronunciation</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-8">
+                    <!-- Quick Passport Actions Bar -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-stone-50 dark:bg-warmDark border border-stone-200 dark:border-warmBorderDark">
+                        <span class="text-xs font-bold text-stone-500">Track in Virtual Passport:</span>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="togglePassportItem('${dish.id}', 'tasted'); openDishModal('${dish.id}')" class="px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${isTasted ? 'bg-emeraldCustom text-white' : 'bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300'} transition-all">
+                                <i class="fa-solid fa-check"></i>
+                                <span>${isTasted ? 'Tasted ✓' : 'Mark as Tasted'}</span>
+                            </button>
+                            <button onclick="togglePassportItem('${dish.id}', 'want'); openDishModal('${dish.id}')" class="px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${isWant ? 'bg-terracotta text-white' : 'bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300'} transition-all">
+                                <i class="fa-solid fa-bookmark"></i>
+                                <span>${isWant ? 'In Wishlist' : 'Add to Wishlist'}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cultural History & Flavor Chart Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                        <div class="space-y-4">
+                            <h3 class="font-serif-heading text-xl font-bold border-l-4 border-terracotta pl-3">History & Significance</h3>
+                            <p class="text-stone-600 dark:text-stone-300 text-sm leading-relaxed">${dish.history}</p>
+                            
+                            <div class="pt-2">
+                                <h4 class="font-bold text-xs uppercase tracking-wider text-stone-400 mb-2">Key Ingredients</h4>
+                                <div class="flex flex-wrap gap-1.5">
+                                    ${dish.ingredients.map(i => `<span class="px-3 py-1 rounded-full bg-stone-100 dark:bg-warmDark text-stone-700 dark:text-stone-300 text-xs font-medium border border-stone-200 dark:border-warmBorderDark">${i}</span>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flavor Profile Chart -->
+                        <div class="bg-stone-50 dark:bg-warmDark p-4 rounded-3xl border border-stone-200 dark:border-warmBorderDark flex flex-col items-center">
+                            <h4 class="font-serif-heading text-sm font-bold mb-2">Flavor Profile Breakdown</h4>
+                            <div class="w-full max-w-[280px] aspect-square">
+                                <canvas id="flavorChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preparation Step-by-Step -->
+                    <div class="space-y-4 pt-4 border-t border-stone-200 dark:border-warmBorderDark">
+                        <h3 class="font-serif-heading text-xl font-bold border-l-4 border-saffron pl-3">Preparation & Cooking Steps</h3>
+                        <ol class="space-y-3">
+                            ${dish.recipeOverview.map((step, idx) => `
+                                <li class="flex items-start space-x-3 text-sm text-stone-600 dark:text-stone-300">
+                                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-saffron/20 text-saffron font-bold text-xs flex items-center justify-center mt-0.5">${idx + 1}</span>
+                                    <span>${step}</span>
+                                </li>
+                            `).join('')}
+                        </ol>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+
+            // Render Chart.js Radar
+            setTimeout(() => {
+                renderFlavorChart(dish.flavorProfile);
+            }, 50);
+        }
+
+        function closeDishModal() {
+            document.getElementById('dish-modal').classList.add('hidden');
+        }
+
+        function renderFlavorChart(profile) {
+            const ctx = document.getElementById('flavorChart').getContext('2d');
+            
+            if (currentChart) currentChart.destroy();
+
+            currentChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Sweet', 'Savory', 'Spicy', 'Umami', 'Sour', 'Bitter'],
+                    datasets: [{
+                        label: 'Flavor Intensity',
+                        data: [profile.Sweet, profile.Savory, profile.Spicy, profile.Umami, profile.Sour, profile.Bitter],
+                        backgroundColor: 'rgba(224, 90, 71, 0.25)',
+                        borderColor: '#E05A47',
+                        pointBackgroundColor: '#F4A261',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 10,
+                            ticks: { display: false },
+                            grid: { color: 'rgba(156, 163, 175, 0.2)' },
+                            angleLines: { color: 'rgba(156, 163, 175, 0.2)' },
+                            pointLabels: {
+                                font: { size: 10, weight: 'bold' },
+                                color: '#A1A1AA'
+                            }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        /* Web Speech API Text-to-Speech */
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop any active speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Text-to-speech is not supported in your browser.');
+            }
+        }
+
+        window.onload = function() {
+            loadPassportState();
+            renderDishesGrid();
+            renderMapPins();
+        };
+    </script>
+</body>
+</html>
